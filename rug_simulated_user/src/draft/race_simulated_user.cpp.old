@@ -1,0 +1,762 @@
+/* _________________________________
+   |                                 |
+   |          RUN SYSTEM BY          |
+   |_________________________________| */
+   
+//rm -rf /tmp/pdb
+//roslaunch race_simulated_user simulated_user.launch
+
+/* _________________________________
+  |                                 |
+  |             INCLUDES            |
+  |_________________________________| */
+  
+//system includes
+#include <std_msgs/String.h>
+#include <sstream>
+
+//ros includes 
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <sensor_msgs/PointCloud2.h>
+
+#include <pluginlib/class_list_macros.h> 
+#include <stdio.h>
+#include <race_perception_db/perception_db.h>
+#include <race_perception_db/perception_db_serializer.h>
+
+//pcl includes
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/ros/conversions.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
+
+//package includes
+#include <feature_extraction/spin_image.h>
+//#include <race_3d_object_tracking/TrackedObjectPointCloud.h>
+#include <race_perception_msgs/perception_msgs.h>
+#include <feature_extraction/spin_image.h>
+//#include <race_3d_object_tracking/TrackedObjectPointCloud.h>
+#include <object_conceptualizer/object_conceptualization.h>
+#include <race_simulated_user/race_simulated_user_functionality.h>
+#include <race_perception_utils/print.h>
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include "std_msgs/Float64.h"
+
+
+
+
+/* _________________________________
+  |                                 |
+  |            NameSpace            |
+  |_________________________________| */
+
+using namespace pcl;
+using namespace std;
+using namespace ros;
+using namespace race_perception_utils;
+
+typedef pcl::PointXYZRGBA PointT;
+#define Thershold 2
+
+/* _________________________________
+  |                                 |
+  |         Global constant         |
+  |_________________________________| */
+
+#define spin_image_width 4
+#define subsample_spinimages 10 /*subsample spinimages*/
+#define classification_thershold 1
+
+#define spin_image_support_lenght 0.2
+
+#define window_size 3
+#define number_of_Category 10
+
+float P_Thereshold = 0.67;   
+
+ std::string home_address= "/home/hamidreza/";
+/* _________________________________
+  |                                 |
+  |         Global Variable         |
+  |_________________________________| */
+
+PerceptionDB* _pdb;
+typedef pcl::PointXYZRGBA PointT;
+
+unsigned int cat_id = 1;
+unsigned int track_id =1;
+unsigned int view_id = 1;
+string InstanceAddressTmp= "";
+
+std::string PCDFileAddressTmp;
+std::string True_Category_Global;
+std::string Object_name_orginal;
+std::string evaluationFile, evaluationTable, precision_file;
+
+ofstream Result , Result_table , PrecisionMonitor, PrecisionEpoch, NumberofFeedback , category_random, instances_random, category_introduced;
+int TP =0, FP=0, FN=0, TPtmp =0, FPtmp=0, FNtmp=0, Obj_Num=0 ;//track_id_gloabal = 1 ;//, track_id_gloabal2=1;      
+
+float PrecisionSystem =0;
+
+string extractObjectName (string Object_name_orginal )
+{
+    std:: string Object_name;
+    std:: string Temp_Object_name = Object_name_orginal;// for writing object name in result file;
+    int rfind = Temp_Object_name.rfind("//")+2;       
+    int len = Temp_Object_name.length();
+
+    for (int i=0; i<(len-rfind); i++)
+    {	
+	Object_name += Temp_Object_name.at(i+rfind);
+    }
+    if (len-rfind < 18)
+    { 
+	for (int i=len-rfind; i< 17;i++ )
+	    Object_name += " ";
+    }
+    return (Object_name);
+}
+
+string extractCategoryName (string InstanceAddress )
+{
+    string categoryName="";	    
+    int ffind = InstanceAddress.rfind("//")+2;       
+    int lfind =  InstanceAddress.rfind("_");       
+    for (int i=0; i<(lfind-ffind); i++)
+    {
+	categoryName += InstanceAddress.at(i+ffind);
+    }
+    return (categoryName);
+}
+
+
+void evaluationfunction(const race_perception_msgs::RRTOV &result)
+{
+    PrettyPrint pp;
+    string True_cat = True_Category_Global;  
+    std:: string Object_name;
+    
+    Object_name = extractObjectName (Object_name_orginal);
+    ROS_INFO("\n extractObjectName: %s", Object_name.c_str()); 
+    
+    Obj_Num++;
+    pp.info(std::ostringstream().flush() << "track_id="<<result.track_id << "\tview_id=" << result.view_id);
+    
+    pp.info(std::ostringstream().flush() << "normalizedObjectCategoriesDistance{");
+    for (size_t i = 0; i < result.result.size(); i++)
+    {
+	pp.info(std::ostringstream().flush() << "-"<< result.result.at(i).normalized_distance);
+    }
+    pp.info(std::ostringstream().flush() << "}\n");
+
+    int categoryIndex =-1;  
+    
+    if ( result.result.size() <= 0)
+    {
+	pp.warn(std::ostringstream().flush() << "Warning: Size of NormalObjectToCategoriesDistances is 0");
+    }
+       
+    float minimumDistance = result.minimum_distance;
+
+    
+    string Predict_cat;
+    Predict_cat= result.recognition_result.c_str();
+    
+    if (Predict_cat == "Unknown")
+    {
+	Predict_cat = "Category//Unk";
+    }    
+   
+    pp.info(std::ostringstream().flush() << "[-]Object_name: "<< Object_name.c_str());
+    pp.info(std::ostringstream().flush() << "[-]True_cat: "<<True_cat.c_str());
+    pp.info(std::ostringstream().flush() << "[-]Predict_cat: " << Predict_cat.c_str());
+
+    char Unknown[] = "Category//Unk";
+
+//     precision_file = ros::package::getPath("race_simulated_user")+ "/result/PrecisionMonitor.txt";
+    PrecisionMonitor.open (precision_file.c_str(), std::ofstream::app);
+    PrecisionMonitor.precision(4);
+    
+
+    Result.open( evaluationFile.c_str(), std::ofstream::app);    
+    Result.precision(4);
+    if ((strcmp(True_cat.c_str(),Unknown)!=0) && (strcmp(True_cat.c_str(),Predict_cat.c_str())==0))
+    { 
+	TP++;
+	TPtmp++;
+	Result << "\n"<<Obj_Num<<"\t"<<Object_name <<"\t\t"<< True_cat <<"\t\t"<< Predict_cat <<"\t\t"<< "1\t0\t0" << "\t\t"<< minimumDistance;
+	Result << "\n-----------------------------------------------------------------------------------------------------------------------------------";
+	
+	PrecisionSystem = TPtmp/double (TPtmp+FPtmp);
+	PrecisionMonitor << PrecisionSystem<<"\n";
+    }
+    else if ((strcmp(True_cat.c_str(),Unknown)!=0) && (strcmp(True_cat.c_str(),Predict_cat.c_str())!=0) && (strcmp(Predict_cat.c_str(),Unknown)!=0))
+    {  	
+	FP++; FN++;
+	FPtmp++; FNtmp++;    
+	Result << "\n"<<Obj_Num<<"\t"<<Object_name <<"\t\t"<< True_cat <<"\t\t"<< Predict_cat <<"\t\t"<< "0\t1\t1"<< "\t\t"<< minimumDistance;
+	Result << "\n-----------------------------------------------------------------------------------------------------------------------------------";
+	Result << "\n\n\t.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.";
+	Result << "\n\t - Correct classifier - Category Updated";
+	Result << "\n\t .<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.\n\n";
+	IntroduceNewCategory(InstanceAddressTmp, cat_id, track_id, view_id);
+	track_id++;
+	pp.info(std::ostringstream().flush() << "[-]Category Updated");
+	
+	PrecisionSystem = TPtmp/double (TPtmp+FPtmp);
+	PrecisionMonitor << PrecisionSystem<<"\n";
+
+    }
+    else if ((strcmp(True_cat.c_str(),Unknown)==0) && (strcmp(Predict_cat.c_str(),Unknown)!=0))
+    { 	
+	FP++; 
+	FPtmp++;
+	Result << "\n"<<Obj_Num<<"\t"<<Object_name <<"\t\t"<< True_cat <<"\t\t"<< Predict_cat <<"\t\t"<< "0\t1\t0"<< "\t\t"<< minimumDistance;
+	Result << "\n-----------------------------------------------------------------------------------------------------------------------------------";
+	
+	PrecisionSystem = TPtmp/double (TPtmp+FPtmp);
+	PrecisionMonitor << PrecisionSystem<<"\n";
+    }
+    else if ((strcmp(True_cat.c_str(),Unknown)!=0) && (strcmp(Predict_cat.c_str(),Unknown)==0))
+    { 	
+	FN++;
+	FNtmp++;
+	Result << "\n"<<Obj_Num<<"\t"<<Object_name <<"\t\t"<< True_cat <<"\t\t"<< Predict_cat <<"\t\t"<< "0\t0\t1"<< "\t\t"<< minimumDistance;
+	Result << "\n-----------------------------------------------------------------------------------------------------------------------------------";
+	Result << "\n\n\t.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.";
+	Result << "\n\t - Correct classifier - Category Updated";
+	Result << "\n\t .<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.<>.\n\n";
+	IntroduceNewCategory(InstanceAddressTmp, cat_id, track_id, view_id);
+	track_id++;
+	pp.info(std::ostringstream().flush() << "[-]Category Updated");
+	
+	PrecisionSystem = TPtmp/double (TPtmp+FPtmp);
+	PrecisionMonitor << PrecisionSystem<<"\n";
+    }
+    else if ((strcmp(True_cat.c_str(),Unknown)==0) && (strcmp(Predict_cat.c_str(),Unknown)==0))
+    { 	
+	Result << "\n"<<Obj_Num<<"\t"<<Object_name <<"\t\t"<< True_cat <<"\t\t"<< Predict_cat <<"\t\t"<< "0\t0\t0"<< "\t\t"<< minimumDistance;
+	Result << "\n-----------------------------------------------------------------------------------------------------------------------------------";
+	
+	PrecisionSystem = TPtmp/double (TPtmp+FPtmp);
+	PrecisionMonitor << PrecisionSystem<<"\n";
+	
+    }
+    Result.close();
+    Result.clear();
+    PrecisionMonitor.close();
+    PrecisionMonitor.clear();
+    pp.printCallback();
+}
+
+void Visualize_simulated_teacher_in_MATLAB (int RunCount)
+{
+ 
+    // for changing font some missing fonts in ubuntu 11.04 should be installed.
+    // sudo apt-get install xfonts-75dpi
+    // sudo apt-get install xfonts-75dpi
+
+    char run_count [10];
+    sprintf( run_count, "%d",RunCount );
+    string path = ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count + "/graph.m";
+
+    ofstream matlabFile;
+    matlabFile.open (path.c_str(), std::ofstream::out);
+    matlabFile.precision(4);
+    matlabFile << "close all;\nhax=axes;\nfigure;\nhold on;\ngrid on;";
+    matlabFile << "\nset(gca,'LineStyleOrder', '-o');";
+
+    matlabFile << "\nPercision= [";
+
+    std::string value;
+    std::ifstream ReadPrecisionMonitor (precision_file.c_str());
+    std::getline (ReadPrecisionMonitor, value);
+
+    matlabFile << value;
+
+    int itration = 1;
+
+    while (ReadPrecisionMonitor.good())
+    {
+	std::getline (ReadPrecisionMonitor, value);
+	matlabFile << ", "<<value;
+	itration++;
+    }
+    
+    
+    int remain = itration % 10;
+    matlabFile << "];\naxis([0,"<< itration + 10 - remain <<",0,1.2]);\nplot (Percision, 'LineWidth',3);";
+    matlabFile << "\nxLabel('Itrations','FontSize',12);\nylabel('Percision','FontSize',12);";
+
+    
+  // draw a thershold line
+    matlabFile << "\nline([0 "<< itration + 10 - remain <<"],["<< P_Thereshold << " " <<P_Thereshold <<"] ,'Color',[0.7 0.4 1], 'LineWidth',2);";
+    matlabFile << "\ntext(2, "<< P_Thereshold +0.01 <<",'Thereshold ="<< P_Thereshold<<"','FontSize',14);";
+    
+    itration = 0;
+    string path_tmp = ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count + "/Category_Introduced.txt";
+    std::ifstream read_category_introduced (path_tmp.c_str());
+
+    string path_tmp2 = home_address+ "/Category/Category.txt";
+    std::ifstream category_name (path_tmp2.c_str());
+    string cat_name ="";
+    
+    matlabFile << "\nset(gca,'LineStyleOrder', '--');";
+    value = "";
+    string value_tmp;
+    // draw a line 
+    std::getline (read_category_introduced, value_tmp);
+    matlabFile << "\nline(["<< itration<< ","<< itration <<"] ,get(hax,'YLim'),'Color',[1 0 0], 'LineWidth',3);";
+    
+    // add category name to the graph
+    std::getline (category_name, cat_name);
+    cat_name = extractCategoryName(cat_name);
+    float text_Y_pos = 0.05;
+    bool flg=true;
+    matlabFile << "\ntext("<<itration<<".5,"<< text_Y_pos <<",' "<< cat_name <<" ', 'BackgroundColor',[.7 .9 .7],'Margin',2,'FontSize',15,'FontWeight','bold');";
+    
+//     // add category name to the graph
+//     std::getline (category_name, cat_name);
+//     cat_name = extractCategoryName(cat_name);
+//     text_Y_pos = 0.1;
+//     matlabFile << "\ntext("<<itration<<".5,"<< text_Y_pos <<",' "<< cat_name <<" ', 'BackgroundColor',[.7 .9 .7],'Margin',2,'FontSize',12,'FontWeight','bold');";
+
+    itration++;
+
+    while (read_category_introduced.good())
+    {
+	std::getline (read_category_introduced, value);
+	if (value == value_tmp)
+	{
+	    matlabFile << "\nline(["<< itration<< ","<< itration <<"] ,get(hax,'YLim'),'Color',[1 0 0], 'LineWidth',3);";
+	    std::getline (category_name, cat_name);
+	    cat_name = extractCategoryName(cat_name);
+	    if (flg == true)
+	    {
+		matlabFile << "\ntext("<<itration<<".5, 0.15 ,' "<< cat_name <<" ', 'BackgroundColor',[.7 .9 .7],'Margin',2,'FontSize',15,'FontWeight','bold');";
+		flg = false;
+	    }
+	    else
+	    {
+// 		text_Y_pos = 0.1;
+	    	matlabFile << "\ntext("<<itration<<".5, 0.1,' "<< cat_name <<" ', 'BackgroundColor',[.7 .9 .7],'Margin',2,'FontSize',15,'FontWeight','bold');";
+		flg = true;
+	    
+	    }
+
+	}
+	itration++;
+    }
+    
+    matlabFile.close();
+    
+    
+}
+
+
+int main(int argc, char** argv)
+{
+    int RunCount=1;
+        
+    
+    
+    
+//     while(RunCount <= number_of_Category)
+//     {
+	/* __________________________________
+	|                                   |
+	|  Creating a folder for each RUN  |
+	|_________________________________| */
+	//int to string converting 
+	char run_count [10];
+	sprintf( run_count, "%d",RunCount );
+	//Creating a folder for each RUN.
+	string systemStringCommand= "mkdir "+ ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count ;
+	system( systemStringCommand.c_str());
+	
+	/* _________________________________
+	|                                  |
+	|     Randomly sort categories    |
+	|_________________________________| */
+// 	generateRrandomSequencesCategories(RunCount);
+	
+	evaluationFile = ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count + "/Detail_Evaluation.txt";
+	Result.open (evaluationFile.c_str(), std::ofstream::out);
+	//Result <<"\nclassification_thershold = " << classification_thershold <<  "\nspin_image_width = " << spin_image_width << "\nsubsample_spinimages = " << subsample_spinimages << "\n\n";
+	Result << "\nNum"<<"\tObject_name" <<"\t\t\t"<< "True_Category" <<"\t\t"<< "Predict_Category"<< "\t"<< "TP" << "\t"<< "FP"<< "\t"<< "FN \t\tDistance";
+	Result << "\n------------------------------------------------------------------------------------------------------------------------------------";
+	Result.close();
+	Result.clear();
+	
+	precision_file = ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count +"/PrecisionMonitor.txt";
+	PrecisionMonitor.open (precision_file.c_str(), std::ofstream::out);
+	PrecisionMonitor.precision(4);
+	PrecisionMonitor.close();
+	
+	string path_tmp = ros::package::getPath("race_simulated_user")+ "/result/RUN"+ run_count + "/Category_Introduced.txt";
+	category_introduced. open (path_tmp.c_str(), std::ofstream::out);
+	
+	
+	ros::init (argc, argv, "EVALUATION");
+	
+	ros::NodeHandle nh;
+	_pdb = race_perception_db::PerceptionDB::getPerceptionDB(&nh); //initialize the database class_list_macros
+	string name = nh.getNamespace();
+
+	
+	/* _________________________________
+	  |                                |
+	 |       wait for 0.5 second      |
+	|________________________________| */
+	
+	ros::Time start_time = ros::Time::now();
+	while (ros::ok() && (ros::Time::now() - start_time).toSec() < 0.5)
+	{  //wait  
+	}
+		    
+	/* ____________________________________________________
+	  |                                                   |
+	 |   create a subscriber to get recognition feedback |
+	|___________________________________________________| */
+	
+	unsigned found = name.find_last_of("/\\");
+	std::string topic_name = name.substr(0,found) + "/tracking/recognition_result";
+	ros::Subscriber sub = nh.subscribe(topic_name, 10, evaluationfunction);
+
+	/* _________________________________
+	|                                  |
+	|         create a publisher      |
+	|________________________________| */
+	// 
+	std::string pcin_topic = name.substr(0,found) + "/pipeline_default/tracker/tracked_object_point_cloud";  
+	ros::Publisher pub = nh.advertise< race_perception_msgs::PCTOV> (pcin_topic, 1);
+
+	ros::Publisher Precision_pub = nh.advertise<std_msgs::Float64>("Percision", 10);
+	std_msgs::Float64 Precision_msg;
+
+	ros::Publisher Introduce_category_pub = nh.advertise<std_msgs::Float64>("Introduce_category", 10);
+	std_msgs::Float64 Introduce_category_msg;
+	
+	/* _________________________________
+	  |                                |
+	 |         Initialization         |
+	|________________________________| */
+	
+	string categoryName="";
+	string InstanceAddress= "";	
+	unsigned int class_index = 1; // class index
+	unsigned int instance_number = 1;
+	cat_id = 1;// it is a constance to create key for categories <Cat_Name><Cat_ID>
+	track_id = 1;
+	view_id = 1; // it is a constance to create key for categories <TID><VID>
+
+	vector <unsigned int> instance_number2;
+	for (int i = 0; i < number_of_Category ; i++)
+	{
+	    instance_number2.push_back(1);
+	}
+	    
+	/* _________________________________
+	  |                                |
+	 |        Introduce category      |
+	|________________________________| */
+
+	int number_of_category = 0;
+	
+	for(int i = 0; i < 3 ; i++)
+	{
+	    selectAnInstancefromSpecificCategory(class_index, instance_number2.at(class_index-1), InstanceAddress);
+	    
+	    ROS_INFO("\t\t[-]-Instancenumber %ld", instance_number2.at(class_index-1));
+	    IntroduceNewCategory(InstanceAddress, cat_id, track_id, view_id); 
+	    track_id++;
+	    //view_id ++; // in this implementation we consider VID as a constant
+	}
+	category_introduced<< "1\n";
+	number_of_category ++;
+
+	// extracting the category name 
+	categoryName=extractCategoryName(InstanceAddress);
+	ROS_INFO("\n extractCategoryName %s", categoryName.c_str()); 
+	
+	Result.open (evaluationFile.c_str(), std::ofstream::app);
+	Result << "\n\n\t################################################";
+	Result << "\n\t\t -"<< categoryName.c_str() <<" Category Introduced";
+	Result << "\n\t################################################\n\n";
+	Result.close();
+	Result.clear();
+	
+
+	/* _________________________________
+	  |                                |
+	 |        Simulated Teacher       |
+	|________________________________| */
+	
+	categoryName = "";
+    
+	float Precision_evaluation = 0;
+	
+	vector <float> average_class_precision;
+	
+	while ( class_index < number_of_Category)
+	{
+
+	    class_index ++; // class index
+	    instance_number=1;
+	    InstanceAddress= "";
+
+	    for(int i = 0; i < 3 ; i++)
+	    {
+		selectAnInstancefromSpecificCategory(class_index, instance_number2.at(class_index-1), InstanceAddress);
+		ROS_INFO("\t\t[-]-Instancenumber %ld", instance_number2.at(class_index-1));
+
+		IntroduceNewCategory(InstanceAddress, cat_id, track_id, view_id); 
+		
+		track_id++;
+		//view_id ++;
+	    }
+    	    number_of_category ++;// 2
+
+	    // extracting the category name 
+	    categoryName=extractCategoryName(InstanceAddress);
+	    ROS_INFO("\n extractCategoryName %s", categoryName.c_str()); 	    
+	       
+	    Result.open (evaluationFile.c_str(), std::ofstream::app);
+	    Result << "\n\n\t################################################";
+	    Result << "\n\t\t -"<< categoryName.c_str() <<" Category Introduced";
+	    Result << "\n\t################################################\n\n";
+	    Result.close();
+	    Result.clear();
+
+	    bool flag = true;
+
+	    categoryName = "";
+	    
+	    TPtmp = 0; FPtmp = 0; FNtmp = 0;
+	    
+	    int k = 0; // number of classification result    
+	    float Precision_tmp = 0;
+	    Precision_evaluation = 0;
+	    unsigned int c =1;// class index
+	    int itrations =1;
+	    bool User_sees_no_improvement_in_precision = false;
+	    
+	    while ( ((Precision_evaluation < P_Thereshold ) or (k < number_of_category))
+		    and (!User_sees_no_improvement_in_precision) )
+	    {
+		//Matlab visualization.
+		if (flag == true)
+		{
+		    category_introduced<< "1\n";
+		    flag = false;
+		}else
+		{
+		    category_introduced<< "0\n";
+		}		
+		
+		ROS_INFO("\t\t[-]+++++++++++++++++ Iteration:%i",itrations);
+		ROS_INFO("\t\t[-]+++++++++++++++++ c:%i",c);
+		ROS_INFO("\t\t[-]+++++++++++++++++ instance_number:%i",instance_number2.at(c-1));
+
+		// select an instance from an specific category
+		InstanceAddress= "";
+
+		selectAnInstancefromSpecificCategory(c, instance_number2.at(c-1), InstanceAddress);
+		ROS_INFO("\t\t[-]-Instancenumber %ld", instance_number2.at(c-1));
+
+		ROS_INFO("\t\t[-]-Test Instance: %s", InstanceAddress.c_str());
+    
+		// check the selected instance exist or not? if yes, send it to the race_feature_extractor
+		if (InstanceAddress.size() < 2) 
+		{
+		    ROS_INFO("\t\t[-]-The %s file does not exist", InstanceAddress.c_str());
+		    category_introduced.close();
+		    ROS_INFO("\t\t[-]- finish"); 
+		    ROS_INFO("\t\t[-]- number of taught categories= %i", number_of_category); 
+		    PrecisionEpoch.close();
+		    PrecisionEpoch.clear();
+		    
+		    Result.open (evaluationFile.c_str(), std::ofstream::app);
+		    Result << "\n There is not enough test data to complete the evaluation";
+		    Result.close();
+		    Result.clear(); 
+		    
+		    Visualize_simulated_teacher_in_MATLAB(RunCount);
+
+		    return 0 ;
+
+		}
+		else
+		{
+		    InstanceAddressTmp=InstanceAddress;
+		    True_Category_Global = InstanceAddress;
+		    True_Category_Global.resize(13);
+		    
+		    InstanceAddress = home_address +"/"+ InstanceAddress.c_str();
+// 		    ROS_INFO("\t\t[-]-Instance: %s", InstanceAddress.c_str());
+		    
+		    //load an instance from file
+		    boost::shared_ptr<PointCloud<PointT> > PCDFile (new PointCloud<PointT>);
+		    if (io::loadPCDFile <PointXYZRGBA> (InstanceAddress.c_str(), *PCDFile) == -1)
+		    {	
+			    ROS_ERROR("\t\t[-]-Could not read given object %s :",InstanceAddress.c_str());
+			    return(0);
+		    }
+		    
+
+		    ROS_INFO("\t\t[-]-  track_id: %i , \tview_id: %i ",track_id, view_id );
+
+		    Object_name_orginal=InstanceAddress; 
+		    
+		    //Declare PCTOV msg 
+		    boost::shared_ptr<race_perception_msgs::PCTOV> msg (new race_perception_msgs::PCTOV );
+		    pcl::toROSMsg(*PCDFile, msg->point_cloud);
+		    msg->track_id = track_id;//it is 
+		    msg->view_id = view_id;
+		    pub.publish (msg);
+		    ROS_INFO("\t\t[-]- Emulating race_object_tracking pakage by publish a point cloud: %s", InstanceAddress.c_str());
+		    		    ros::spinOnce();		
+
+
+		    		    
+		    if (c >= number_of_category)
+		    {
+			c = 1;
+		    }
+		    else
+		    {
+			c++;
+		    }
+		    
+		    // wait for half an second
+		    start_time = ros::Time::now();
+		    while (ros::ok() && (ros::Time::now() - start_time).toSec() < 0.5)
+		    { //wait
+		    }
+		    ros::spinOnce();		
+		    ROS_INFO("\t\t[-]- itrationst= %i", itrations);
+		    ROS_INFO("\t\t[-]- TPtmp+FPtmp= %i", TPtmp+FPtmp);
+		    if (itrations != TPtmp+FPtmp)
+		    {
+			pub.publish (msg);
+			start_time = ros::Time::now();
+			while (ros::ok() && (ros::Time::now() - start_time).toSec() < 1)
+			{ //wait
+			}
+			ros::spinOnce();
+			ROS_INFO("\t\t[-]- *itrationst= %i", itrations);
+			ROS_INFO("\t\t[-]- *TPtmp+FPtmp= %i", TPtmp+FPtmp);
+		    }
+		    
+		    
+		    if ( (itrations >= number_of_category) and (itrations <= window_size * number_of_category))
+		    {    
+			//Precision_tmp = Precision_evaluation;
+			Precision_evaluation = TPtmp/double (TPtmp+FPtmp);
+			if (Precision_evaluation > P_Thereshold)
+			{
+			    average_class_precision.push_back(Precision_evaluation);
+			    //PrecisionEpoch << Precision_evaluation<<"\n";
+			    User_sees_no_improvement_in_precision = false;
+			    //Precision_tmp = Precision_evaluation;
+			    ROS_INFO("\t\t[-]- Precision_evaluation= %f", Precision_evaluation); 
+			    double Recall = TPtmp/double (TPtmp+FNtmp);
+			    		    ros::spinOnce();		
+
+			    Result.open (evaluationFile.c_str(), std::ofstream::app);
+			    Result.precision(4);
+			    Result << "\n\n\t************************************************";
+			    Result << "\n\t\t - itrations = "<< itrations;
+			    Result << "\n\t\t - number_of_category = "<< number_of_category;
+			    Result << "\n\t\t - True  Positive = "<< TPtmp;
+			    Result << "\n\t\t - False Positive = "<< FPtmp;
+			    Result << "\n\t\t - False Negative = "<< FNtmp;
+			    Result << "\n\t\t - Precision  = "<< Precision_evaluation;//TPtmp/double (TPtmp+FPtmp);
+			    Result << "\n\t\t - Recall = "<< Recall;//TPtmp/double (TPtmp+FNtmp);
+			    Result << "\n\n\t************************************************\n\n";
+			    Result << "\n------------------------------------------------------------------------------------------------------------------------------------";
+			    Result.close();
+			    ros::spinOnce();
+			    itrations = 1;
+			}  
+			    
+		    }//if
+		    else if ( (itrations >= window_size * number_of_category))
+		    {
+			User_sees_no_improvement_in_precision = true;
+			Precision_evaluation = TPtmp/double (TPtmp+FPtmp);
+			ROS_INFO("\t\t[-]- Precision_evaluation= %f", Precision_evaluation); 
+			double Recall = TPtmp/double (TPtmp+FNtmp);
+			Result.open (evaluationFile.c_str(), std::ofstream::app);
+			Result.precision(4);
+			Result << "\n\n\t************************************************";
+			Result << "\n\t\t - True  Positive = "<< TPtmp;
+			Result << "\n\t\t - False Positive = "<< FPtmp;
+			Result << "\n\t\t - False Negative = "<< FNtmp;
+			Result << "\n\t\t - Precision  = "<< Precision_evaluation;//TPtmp/double (TPtmp+FPtmp);
+			Result << "\n\t\t - Recall = "<< Recall;//TPtmp/double (TPtmp+FNtmp);
+			Result << "\n\n\t************************************************\n\n";
+			Result << "\n------------------------------------------------------------------------------------------------------------------------------------";
+			Result.close();
+			ros::spinOnce();
+		    }
+		    k++; // k<-k+1 : number of classification result
+		    itrations	++;
+		}//else	    	
+	    }
+	    	ROS_INFO("\t\t[-]- number of Iterations = %ld", itrations); 
+	}
+	
+	float average_class_precision_value =0;
+	for (int i =0; i<average_class_precision.size(); i++)
+	{
+	    average_class_precision_value+=average_class_precision.at(i);
+	    	    
+	}
+	average_class_precision_value=average_class_precision_value/average_class_precision.size();
+	
+	Precision_evaluation = TP/double (TP+FP);
+	ROS_INFO("\t\t[-]- Global Precision = %f", Precision_evaluation); 
+	double Recall = TP/double (TP+FN);
+	Result.open (evaluationFile.c_str(), std::ofstream::app);
+	Result.precision(4);
+	Result << "\n\n\t******************* Global *********************";
+	Result << "\n\t\t - True  Positive = "<< TP;
+	Result << "\n\t\t - False Positive = "<< FP;
+	Result << "\n\t\t - False Negative = "<< FN;
+	Result << "\n\t\t - Precision  = "<< Precision_evaluation;//TPtmp/double (TPtmp+FPtmp);
+	Result << "\n\t\t - Recall = "<< Recall;//TPtmp/double (TPtmp+FNtmp);
+	Result << "\n\n\t************************************************\n\n";
+	
+	Result << "\n\n\t***********average_class_precision**************\n\n";
+	Result << "\n\t\t - average_class_precision = "<< average_class_precision_value;
+	
+	
+	Result << "\n------------------------------------------------------------------------------------------------------------------------------------";
+	Result.close();
+	ros::spinOnce();
+	
+	
+	category_introduced.close();
+
+	ROS_INFO("\t\t[-]- finish"); 
+	ROS_INFO("\t\t[-]- number of taught categories= %i", number_of_category); 
+
+	PrecisionEpoch.close();
+	PrecisionEpoch.clear(); 
+	
+	Visualize_simulated_teacher_in_MATLAB(RunCount);
+	
+	RunCount++;
+	
+//     }//while(RunCount)   
+    
+    return 0 ;
+}
+

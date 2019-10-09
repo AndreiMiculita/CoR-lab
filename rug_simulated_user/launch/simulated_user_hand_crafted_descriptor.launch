@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!-- This is a launch file for an example on how to bringup of the race perception architecture-->
+<launch>
+<!-- this flag will configure the system to run with nodes or nodelets-->
+<arg name="use_nodelets" default="0"/>
+<arg name="use_standalone" default="false"/>
+<!--<arg name="use_pr2" default="0"/>-->
+<arg name="pdb_source" default="default_pdb"/>
+
+<group ns="/perception">
+
+	<!-- _________________________________-->
+	<!--|                                 |-->
+	<!--|             Memory 		      |-->
+	<!--|_________________________________|-->
+
+		<!--Launches a race_perception_db node(let) -->
+	<include file="$(find race_perception_db)/launch/bringup.launch">
+	    <arg name="use_nodelets" value="$(arg use_nodelets)" />
+	    <arg name="pdb_source" value="$(arg pdb_source)" />
+	    <arg name="name" value="perception_db" />-->
+	</include> 
+
+	
+	<!-- Launches the nodelet_manager -->
+	<group if="$(arg use_nodelets)">
+	    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" output="screen" required="true">
+		<param name="num_worker_threads" value="10"/>
+	    </node>
+	</group>
+	
+	<!-- _________________________________-->
+	<!--|                                 |-->
+	<!--|         Global Param            |-->
+	<!--|_________________________________|-->	
+	
+	<!--recognition_threshold-->
+	<arg name="recognition_threshold" default="20000" />
+	<param name="/perception/recognition_threshold" type="double" value = "$(arg recognition_threshold)"/>
+
+	<!-- set home_address parameter which represents the path of the dataset -->
+	<arg name="home_address" default="/home/cognitiverobotics/datasets/washington_RGBD_object/" /> 
+	<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
+	<arg name="number_of_categories" default="51" />
+	<param name="/perception/number_of_categories" type="int" value = "$(arg number_of_categories)"/>
+
+	<!-- Spin image parameters. -->
+	<arg name="spin_image_width" default="8" />
+	<param name="/perception/spin_image_width" type="int" value = "$(arg spin_image_width)"/>
+	<arg name="spin_image_support_lenght" default="0.1" />
+	<param name="/perception/spin_image_support_lenght" type="double" value = "$(arg spin_image_support_lenght)"/>
+	<arg name="subsample_spinimages" default="10" />
+	<param name="/perception/subsample_spinimages" type="int" value = "$(arg subsample_spinimages)"/>
+
+	<arg name="uniform_sampling_size" default="0.03" />
+	<param name="/perception/uniform_sampling_size" type="double" value = "$(arg uniform_sampling_size)"/>
+
+
+	<!-- Simulated teacher parameters. -->
+	<arg name="protocol_threshold" default="0.67" />
+	<param name="/perception/protocol_threshold" type="double" value = "$(arg protocol_threshold)"/>
+	<arg name="user_sees_no_improvment_const" default="100" />
+	<param name="/perception/user_sees_no_improvment_const" type="int" value = "$(arg user_sees_no_improvment_const)"/>
+	<arg name="window_size" default="3" />
+	<param name="/perception/window_size" type="int" value = "$(arg window_size)"/>
+
+	
+	
+	<!-- GOOD shape descriptor params -->
+	<arg name="adaptive_support_lenght" default="0" />
+	<param name="/perception/adaptive_support_lenght" type="int" value = "$(arg adaptive_support_lenght)"/>
+	<arg name="off_line_flag" default="0" />
+	<param name="/perception/off_line_flag" type="int" value = "$(arg off_line_flag)"/>
+	<arg name="sign" default="1" />
+	<param name="/perception/sign" type="int" value = "$(arg sign)"/>
+	
+	<arg name="number_of_bins" default="20" />
+	<param name="/perception/number_of_bins" type="int" value = "$(arg number_of_bins)"/>
+	<arg name="global_image_width" default="0.2" />
+	<param name="/perception/global_image_width" type="double" value = "$(arg global_image_width)"/>
+			
+
+
+
+	<group ns="/pipeline1">
+			    
+	    <!-- _________________________________-->
+	    <!--|                                 |-->
+	    <!--|        object descriptor        |-->
+	    <!--|_________________________________|-->
+		
+		<!-- <include file="$(find race_object_descriptor)/launch/bringup.launch">
+            <arg name="use_nodelets" value="$(arg use_nodelets)" />
+            <arg name="name" value="object_descriptor" />
+		</include> -->
+
+		<!-- _________________________________-->
+		<!--|                                 |-->
+		<!--|       object_recognition        |-->
+		<!--|_________________________________|-->
+
+		<!-- <include file="$(find race_dictionary_based_object_recognition)/launch/bringup.launch">
+            <arg name="use_nodelets" value="$(arg use_nodelets)" />
+            <arg name="name" value="dictionary_based_object_recognition" />
+		</include> -->
+
+		<!-- _________________________________-->
+		<!--|                                 |-->
+		<!--|       rug_simulated_user        |-->
+		<!--|_________________________________|-->
+            
+	    <include file="$(find rug_simulated_user)/launch/bringup_hand_crafted_descriptor.launch">
+            <arg name="use_nodelets" value="$(arg use_nodelets)" />
+            <arg name="name" value="rug_simulated_user_hand_crafted_descriptor" />
+	    </include>
+
+
+		<!-- _________________________________-->
+		<!--|                                 |-->
+		<!--|         Global Param            |-->
+		<!--|_________________________________|-->
+<!--         <param name="recognition_threshold" value="2" /> -->
+	</group>
+</group>
+
+</launch>
+
+

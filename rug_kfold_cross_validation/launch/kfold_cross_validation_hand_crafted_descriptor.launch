@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!-- This is a launch file for an example on how to bringup of the race perception architecture-->
+<launch>
+<!-- this flag will configure the system to run with nodes or nodelets-->
+<arg name="use_nodelets" default="0"/>
+<arg name="use_standalone" default="false"/>
+<!--<arg name="use_pr2" default="0"/>-->
+<arg name="pdb_source" default="default_pdb"/>
+
+    <group ns="/perception">
+
+	<!-- _________________________________-->
+	<!--|                                 |-->
+	<!--|             Memory 		      |-->
+	<!--|_________________________________|-->
+
+		<!--Launches a race_perception_db node(let) -->
+	<include file="$(find race_perception_db)/launch/bringup.launch">
+	    <arg name="use_nodelets" value="$(arg use_nodelets)" />
+	    <arg name="pdb_source" value="$(arg pdb_source)" />
+	    <arg name="name" value="perception_db" />
+	</include>
+
+	<!-- Launches the nodelet_manager -->
+	<group if="$(arg use_nodelets)">
+	    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" output="screen" required="true">
+		<param name="num_worker_threads" value="10"/>
+	    </node>
+	</group>
+	
+	<group ns="/pipeline1">
+		
+	<!-- _________________________________-->
+	<!--|                                 |-->
+	<!--|         Global Param            |-->
+	<!--|_________________________________|-->
+
+
+		<!-- set home_address parameter which represents the path of the dataset -->
+		<!-- restaurant_object_dataset : "/home/cor/datasets/restaurant_object_dataset/"; -->
+		<!-- modelnet10 : "/home/cor/datasets/modelnet10/"; -->
+		<arg name="home_address" default="/home/cor/datasets/restaurant_object_dataset/" />
+				
+		<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
+
+		<!-- name of approach -->
+		<arg name="name_of_approach" default="your_name_plus_your_student_number" />
+		<param name="/perception/name_of_approach" type="string" value = "$(arg name_of_approach)"/>
+
+		<!-- GOOD descriptor params -->
+		<arg name="adaptive_support_lenght" default="0" />
+		<param name="/perception/adaptive_support_lenght" type="int" value = "$(arg adaptive_support_lenght)"/>
+		
+		<arg name="sign" default="1" />
+		<param name="/perception/sign" type="int" value = "$(arg sign)"/>
+		
+		<arg name="number_of_bins" default="15" />
+		<param name="/perception/number_of_bins" type="int" value = "$(arg number_of_bins)"/>
+		<arg name="global_image_width" default="0.2" />
+		<param name="/perception/global_image_width" type="double" value = "$(arg global_image_width)"/>
+				
+		<arg name="off_line_flag" default="0" />
+		<param name="/perception/off_line_flag" type="int" value = "$(arg off_line_flag)"/>
+
+		<arg name="recognition_threshold" default="2000" />
+		<param name="/perception/recognition_threshold" type="double" value = "$(arg recognition_threshold)"/>
+
+	<!-- ________________________________________-->
+	<!--|                                       |-->
+	<!--|   kfold_cross_validation_evaluation   |-->
+	<!--|_______________________________________|-->
+			
+		<include file="$(find rug_kfold_cross_validation)/launch/bringup_hand_crafted_descriptor.launch">
+			<arg name="use_nodelets" value="$(arg use_nodelets)" />
+			<arg name="name" value="cross_validation" />
+		</include>		
+	
+	</group>
+	
+    </group>
+
+</launch>
+
+

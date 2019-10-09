@@ -1,0 +1,33 @@
+<package>
+  <description brief="rug_simulated_user">
+
+        rug_simulated_user
+
+  </description>
+  <author>Hamidreza</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rug_simulated_user</url>
+	<depend package="roscpp"/>
+	<depend package="std_msgs"/>
+	<depend package="roslib"/>
+	<depend package="nodelet"/>
+	<depend package="sensor_msgs"/>
+	<depend package="race_perception_msgs"/>
+	<depend package="race_perception_db"/>
+	<depend package="race_3d_object_tracking"/>
+	<depend package="race_feature_extraction"/>
+	<depend package="race_object_descriptor"/>
+	<depend package="race_object_conceptualizer"/>
+	<depend package="race_perception_utils"/>
+	<depend package="rug_kfold_cross_validation"/>
+	<depend package="pcl_conversions"/>
+	<rosdep name="boost" />
+	<depend package="race_deep_learning_feature_extraction"/>
+	<export>
+    	<nodelet plugin="${prefix}/nodelets.xml"/>
+    	<cpp cflags="-I${prefix}/include " lflags="-L${prefix}/lib -lrug_simulated_user" />
+	</export>
+
+</package>
+
