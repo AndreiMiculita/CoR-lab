@@ -55,8 +55,8 @@
 
 
 	<!-- set home_address parameter which represents the path of the dataset -->
-	<!-- restaurant_object_dataset = "/datasets/restaurant_object_dataset/"; -->
-	<!-- model_net_10_pcd = "/datasets/modelnet10/"; -->
+	<!-- restaurant_object_dataset = "/home/cor/datasets/restaurant_object_dataset/"; -->
+	<!-- model_net_10_pcd = "/home/cor/datasets/modelnet10/"; -->
 
 	<arg name="home_address" default="/home/cor/datasets/restaurant_object_dataset/" />
 	<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
