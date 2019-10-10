@@ -1,0 +1,15 @@
+system configuration:
+	-experiment_name = TEST
+	-name_of_dataset = Restaurant RGB-D Object Dataset
+	-number_of_bins = 150
+	-number_of_category = 10
+	-name_of_network = /vgg16_service
+	-downsampling = TRUE
+	-downsampling_voxel_size = 0.0002
+	-image_normalization = FALSE
+	-multiviews = TRUE
+	-pooling = Max
+	-modelnet_dataset = 0
+
+No.	object_name				ground_truth	prediction		TP	FP	FN 		distance
+------------------------------------------------------------------------------------------------------------------------------------

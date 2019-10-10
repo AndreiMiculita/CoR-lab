@@ -467,6 +467,20 @@ int chiSquaredBasedObjectCategoryDistance( 	SITOV target,
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int squaredChordDistanceBetweenTwoObjectViewHistogram( SITOV objectViewHistogram1,
+													 SITOV objectViewHistogram2, 
+													 float &diffrence);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+int squaredChordBasedObjectCategoryDistance( 	SITOV target,
+											vector< SITOV > category_instances,
+											float &minimumDistance, 
+											int &best_matched_index, 
+											PrettyPrint &pp);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 int euclideanBasedObjectCategoryDistance(	SITOV target,
 											vector< SITOV > category_instances,
 											float &minimumDistance, 
@@ -480,6 +494,16 @@ int kLBasedObjectCategoryDistance(  SITOV target,
 									float &minimumDistance, 
 									int &best_matched_index, 
 									PrettyPrint &pp);
+/////////////////////////////////////////////////////////////////////////////////////////////////////added A&K
+int FidelityBasedObjectCategoryDistance(  SITOV target,
+									vector< SITOV > category_instances,
+									float &minimumDistance, 
+									int &best_matched_index, 
+									PrettyPrint &pp);
+/////////////////////////////////////////////////////////////////////////////////////////////////////added A&K
+int FidelityDistanceBetweenTwoObjectViewHistogram( SITOV objectViewHistogram1,
+													 SITOV objectViewHistogram2, 
+													 float &diffrence);
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void  confusionMatrixGenerator( string true_category, string predicted_category, 

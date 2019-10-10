@@ -78,7 +78,7 @@ using namespace pcl;
 using namespace std;
 using namespace ros;
 
-// std::string home_address= "/home/hamidreza/";
+// std::string home_address= "/home/cor/";
 
  string extractObjectName (string object_name_orginal )
 {
@@ -2845,7 +2845,7 @@ int conceptualizingDeepLearningAndGoodDescriptor( int &track_id,
     string pcd_file_address_tmp;
     //int track_id =1;
     ofstream train_csv;
-	train_csv.open ("/home/hamidreza/Desktop/train.csv", std::ofstream::trunc);
+	train_csv.open ("/home/cor/top/train.csv", std::ofstream::trunc);
 
     while (train_data.good ())// read train address
     {	
@@ -2989,7 +2989,7 @@ int conceptualizingDeepLearningAndGoodDescriptorPlusDataAugmentation( int &track
     string pcd_file_address_tmp;
     //int track_id =1;
     ofstream train_csv;
-	train_csv.open ("/home/hamidreza/Desktop/train.csv", std::ofstream::trunc);
+	train_csv.open ("/home/cor/top/train.csv", std::ofstream::trunc);
 
     while (train_data.good ())// read train address
     {	
@@ -3794,6 +3794,141 @@ int chiSquaredBasedObjectCategoryDistance( SITOV target,
 	return 1;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////// adde K&A
+int FidelityDistanceBetweenTwoObjectViewHistogram (SITOV objectViewHistogram1,
+						    SITOV objectViewHistogram2, 
+						    float &diffrence)
+{
+	if (objectViewHistogram1.spin_image.size() ==  objectViewHistogram2.spin_image.size())
+	{
+		diffrence = 0;
+		for (size_t i = 0; i < objectViewHistogram1.spin_image.size(); i++)
+		{
+		  if (objectViewHistogram1.spin_image.at(i) + objectViewHistogram2.spin_image.at(i) > 0)
+		  {
+			  diffrence -= sqrt((objectViewHistogram1.spin_image.at(i) * objectViewHistogram2.spin_image.at(i)));  
+				      
+		  }
+		}
+		//diffrence = 0.5 * diffrence;
+		return(1);
+	}
+	else 
+	{
+		ROS_INFO("\t\t[-]- object1 size = %ld", objectViewHistogram1.spin_image.size());
+		ROS_INFO("\t\t[-]- object2 size = %ld", objectViewHistogram2.spin_image.size());
+		ROS_ERROR("Can not compare two object view histograms with diffrent lenght");
+		return(0);
+	}
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////// adde K&A
+int FidelityBasedObjectCategoryDistance( SITOV target,
+		vector< SITOV > category_instances,
+		float &minimumDistance, 
+		int &best_matched_index, 
+		PrettyPrint &pp)
+
+{
+	size_t category_size = category_instances.size();  
+	best_matched_index=-1;//not matched
+
+	if (category_size < 1)
+	{
+		pp.warn(std::ostringstream().flush() <<  "Error: Size of category is zero - could not compute objectCategoryDistance D(t,C)");
+		// return 0;
+	}
+	else
+	{
+		// find the minimum distance between target object and category instances 
+		std::vector<float> listOfDiffrence;
+		float minimum_distance =10000000;
+		for (size_t i=0; i<category_size; i++)
+		{
+			float tmp_diff =0;
+			SITOV categoryInstance;
+			categoryInstance = category_instances.at(i);
+
+			FidelityDistanceBetweenTwoObjectViewHistogram(target,categoryInstance, tmp_diff);
+			listOfDiffrence.push_back(tmp_diff);
+			if (tmp_diff < minimum_distance)
+			{
+				minimum_distance=tmp_diff;
+				best_matched_index=i;
+			}    
+		}
+		minimumDistance=minimum_distance;
+	}
+
+	return 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int squaredChordDistanceBetweenTwoObjectViewHistogram (SITOV objectViewHistogram1,
+						    SITOV objectViewHistogram2, 
+						    float &diffrence)
+{
+	if (objectViewHistogram1.spin_image.size() ==  objectViewHistogram2.spin_image.size())
+	{
+		diffrence = 0;
+		for (size_t i = 0; i < objectViewHistogram1.spin_image.size(); i++)
+		{
+		  if (objectViewHistogram1.spin_image.at(i) + objectViewHistogram2.spin_image.at(i) > 0)
+		  {
+			  diffrence += pow((sqrt(objectViewHistogram1.spin_image.at(i)) - sqrt(objectViewHistogram2.spin_image.at(i))) , 2);
+		  }
+		}
+		diffrence = 0.5 * diffrence;
+		return(1);
+	}
+	else 
+	{
+		ROS_INFO("\t\t[-]- object1 size = %ld", objectViewHistogram1.spin_image.size());
+		ROS_INFO("\t\t[-]- object2 size = %ld", objectViewHistogram2.spin_image.size());
+		ROS_ERROR("Can not compare two object view histograms with diffrent lenght");
+		return(0);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int squaredChordBasedObjectCategoryDistance( SITOV target,
+		vector< SITOV > category_instances,
+		float &minimumDistance, 
+		int &best_matched_index, 
+		PrettyPrint &pp)
+
+{
+	size_t category_size = category_instances.size();  
+	best_matched_index=-1;//not matched
+
+	if (category_size < 1)
+	{
+		pp.warn(std::ostringstream().flush() <<  "Error: Size of category is zero - could not compute objectCategoryDistance D(t,C)");
+		// return 0;
+	}
+	else
+	{
+		// find the minimum distance between target object and category instances 
+		std::vector<float> listOfDiffrence;
+		float minimum_distance =10000000;
+		for (size_t i=0; i<category_size; i++)
+		{
+			float tmp_diff =0;
+			SITOV categoryInstance;
+			categoryInstance = category_instances.at(i);
+
+			squaredChordDistanceBetweenTwoObjectViewHistogram(target,categoryInstance, tmp_diff);
+			listOfDiffrence.push_back(tmp_diff);
+			if (tmp_diff < minimum_distance)
+			{
+				minimum_distance=tmp_diff;
+				best_matched_index=i;
+			}    
+		}
+		minimumDistance=minimum_distance;
+	}
+
+	return 1;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int diffrenceBetweenTwoObjectViewHistogram(SITOV objectViewHistogram1,
 		SITOV objectViewHistogram2, 
@@ -3940,6 +4075,7 @@ int kLBasedObjectCategoryDistance( SITOV target,
 
 	return 1;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void  confusionMatrixGenerator (  string true_category, string predicted_category, 
                                     std::vector<string> map_category_name_to_index,

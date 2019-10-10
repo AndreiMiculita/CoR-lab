@@ -55,11 +55,20 @@
 
 
 	<!-- set home_address parameter which represents the path of the dataset -->
-	<!-- restaurant_object_dataset = "/home/cor/datasets/restaurant_object_dataset/"; -->
-	<!-- model_net_10_pcd = "/home/cor/datasets/modelnet10/"; -->
+	<!-- restaurant_object_dataset = "/datasets/restaurant_object_dataset/"; -->
+	<!-- model_net_10_pcd = "/datasets/modelnet10/"; -->
 
-	<arg name="home_address" default="/home/cor/datasets/modelnet10/" />
+	<arg name="home_address" default="/home/cor/datasets/restaurant_object_dataset/" />
 	<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
+
+	<!-- name of approach -->
+	<arg name="name_of_approach" default="mobilenetV2_IBL" />
+	<param name="/perception/name_of_approach" type="string" value = "$(arg name_of_approach)"/>
+
+	<!-- name of approach -->
+	<arg name="distance_function" default="euclidean" />
+	<param name="/perception/distance_function" type="string" value = "$(arg distance_function)"/>
+
 
 	<!-- The following network architectures have been implemeneted and can be used: 
 		"/vgg16_service", "/vgg19_service", "/xception_service", "/resnet50_service", "/mobilenet_service", ...  
@@ -67,21 +76,35 @@
 		..., "/inception_resnet_service",   "/inception_service"
 	--> 
 	
+	<!-- deep_learning_architecture -->
 	<arg name="deep_learning_architecture" default="/mobilenetV2_service" />
 	<param name="/perception/deep_learning_architecture" type="string" value = "$(arg deep_learning_architecture)"/>
 
 
-	<!-- name of approach -->
-	<arg name="name_of_approach" default="mobilenetV2_IBL" />
-	<param name="/perception/name_of_approach" type="string" value = "$(arg name_of_approach)"/>
-
-	<!-- DOWNSAMPLING 0 = FLASE, 1 = TRUE-->
-	<arg name="downsampling" default="1" /> 
-	<param name="/perception/downsampling" type="bool" value = "$(arg downsampling)"/>
+	<!-- modelnet_dataset 0 = FLASE, 1 = TRUE-->
+	<arg name="modelnet_dataset" default="0" /> 
+	<param name="/perception/modelnet_dataset" type="bool" value = "$(arg modelnet_dataset)"/>
 	
+
+	<!-- Image_normalization 0 = FLASE, 1 = TRUE-->
+	<arg name="image_normalization" default="0" /> 
+	<param name="/perception/image_normalization" type="bool" value = "$(arg image_normalization)"/>
+	
+	<!-- multiviews 0 = FLASE, 1 = TRUE-->
+	<arg name="multiviews" default="1" /> 
+	<param name="/perception/multiviews" type="bool" value = "$(arg multiviews)"/>
+	
+	<!-- max_pooling 0 = FLASE, 1 = TRUE; max_pooling or avg_pooling-->
+	<arg name="max_pooling" default="1" /> 
+	<param name="/perception/max_pooling" type="bool" value = "$(arg max_pooling)"/>
+	
+	<!-- DOWNSAMPLING 0 = FLASE, 1 = TRUE-->
 	<arg name="downsampling_voxel_size" default="0.01" />
 	<param name="/perception/downsampling_voxel_size" type="double" value = "$(arg downsampling_voxel_size)"/>
 	
+	<!-- DOWNSAMPLING 0 = FLASE, 1 = TRUE-->
+	<arg name="downsampling" default="1" /> 
+	<param name="/perception/downsampling" type="bool" value = "$(arg downsampling)"/>
 	
 	<!-- new shape descriptor params -->
 	<arg name="adaptive_support_lenght" default="0" />

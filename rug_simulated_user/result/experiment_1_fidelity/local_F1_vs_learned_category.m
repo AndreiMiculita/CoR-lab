@@ -1,0 +1,12 @@
+close all;
+figure ();
+hold on;
+grid on;
+set(gca,'LineStyleOrder', '--');
+text(1,0.685 ,'Threshold' , 'FontSize',15,'FontWeight','bold','Interpreter','Latex');
+localF1= [1, 1, 1, 0.8, 0.8333, 0.8571, 0.875, 0.7778, 0.7, 0.6923, 0.6857, 0.6774, 0.7857, 0.6842, 0.8125, 0.8235, 0.7778, 0.7368, 0.7, 0.7143, 0.7273, 0.6744, 0.7917, 0.68, 0.7308, 0.6774, 0.7857, 0.7241, 0.6774, 0.7419, 0.7188, 0.6714, 0.6757, 0.7714, 0.7222, 0.7838, 0.7632, 0.6716, 0.8, 0.6744, 0.6905, 0.7442, 0.7727, 0.7111, 0.6739, 0.6809, 0.75, 0.6735, 0.6716, 0.6714, 0.6714];
+line([0 55],[0.67 0.67] ,'Color',[0 0 0], 'LineWidth',1);
+axis([0,55,0.5,1.05]);
+plot(1:size(localF1,2), localF1(1:size(localF1,2)),'-.O', 'Color',[1 0 1], 'LineWidth',2.);
+xlabel('Number of Learned Categories','FontSize',15);
+ylabel('Protocol Accuracy','FontSize',15);

@@ -99,6 +99,7 @@ int  adaptive_support_lenght = 1;
 double global_image_width =0.5;
 double downsampling_voxel_size = 0.001;
 int threshold = 1000;	
+string distance_function = "euclidean";	
 string name_of_approach = "your_name+your_student_number+DL_model"; //CRC stands for Cognitive Robotics Course - can be a param
 
 double recognition_threshold;
@@ -109,7 +110,7 @@ bool multiviews = true;
 bool max_pooling = true;
 bool modelnet_dataset = false; // we do not need to perform PCA for modelNet dataset
 
-std::string home_address= "/media/hamidreza/b9802402-9c38-4427-b601-84cff22d8e35/datasets/object_datasets/";
+std::string home_address= "";
 
 std::string deep_learning_architecture = "/vgg16_service";
 
@@ -268,6 +269,9 @@ int main(int argc, char** argv)
 
     // read database parameter
     nh.param<std::string>("/perception/home_address", home_address, home_address);
+
+    // read distance function
+    nh.param<std::string>("/perception/distance_function", distance_function, distance_function);
     
     // parameters of new object descriptor
     nh.param<int>("/perception/number_of_bins", number_of_bins, number_of_bins);
@@ -338,12 +342,12 @@ int main(int argc, char** argv)
     |_______________________________________________________| */  
 
     // number_of_performed_experiments(name_of_approach, exp_num);
-    string dataset= (home_address == "/home/cognitiverobotics/datasets/restaurant_object_dataset/") ? "Restaurant RGB-D Object Dataset" : "ModelNet10";
+    string dataset= (home_address == "/home/cor/datasets/restaurant_object_dataset/") ? "Restaurant RGB-D Object Dataset" : "ModelNet10";
 
     //0 = FLASE, 1 = TRUE
-    modelnet_dataset = (home_address == "/home/cognitiverobotics/datasets/restaurant_object_dataset/") ? false : true;
- 
-    evaluation_file = ros::package::getPath("rug_kfold_cross_validation")+ "/result/experiment_1/summary_of_experiment.txt";
+    modelnet_dataset = (home_address == "/home/cor/datasets/restaurant_object_dataset/") ? false : true;
+
+    evaluation_file = ros::package::getPath("rug_kfold_cross_validation") + "/result/experiment_1/summary_of_experiment_vgg16_downsampling" + downsampling_flag + "_" + (downsampling ? "voxel_size" + std::to_string(downsampling_voxel_size) : "") + "_" +  distance_function + "_" + std::to_string(number_of_bins) + "bins.txt";
     results.open (evaluation_file.c_str(), std::ofstream::trunc);
 
     results <<"system configuration:" 
@@ -444,7 +448,7 @@ int main(int argc, char** argv)
         |________________________________________________| */
         
         //todo: path should be defined as a param
-        test_csv.open ("/home/hamidreza/Desktop/test.csv", std::ofstream::trunc);
+        test_csv.open ("/home/cor/Desktop/test.csv", std::ofstream::trunc);
 
         //// read list of test data
         std::ifstream list_of_test_data (test_data_path.c_str());
@@ -591,17 +595,36 @@ int main(int argc, char** argv)
                     int best_matched_index;
                     float normalized_distance;
 
-                    //// TODO: type of distance function can be a parameter 
-
-                    //// euclidean distance
-                    //euclideanBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
                     
-                    //// chi-squared distance
-                    //chiSquaredBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+                    if (distance_function == "euclidean") 
+                    {                    
+                        // euclidean distance
+                        euclideanBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "chi-sq") 
+                    {                    
+                        // chi-squared distance
+                        chiSquaredBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "klbased") 
+                    {                    
+                        // symmetric Kullback–Leibler divergence 
+                        kLBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "fidelity") 
+                    {                    
+                        // fidelity
+                        FidelityBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
+                    }
+                    else if (distance_function == "sq-chord") 
+                    {                    
+                        // squared chord distance
+                        squaredChordBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+                    } else {
+                        printf("Unknown distance function, exiting program.\n");
+                        return 1;
+                    }
                     
-                    //// symmetric Kullback–Leibler divergence 
-                    kLBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
-                                
                     object_category_distance.push_back(min_distance_object_category);
                     //// the following msg can be used in computing top5 accuracy or other high-level process
                     NOCD tmp;

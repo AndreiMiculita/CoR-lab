@@ -93,11 +93,14 @@ int  number_of_bins = 5;
 int  adaptive_support_lenght = 1;
 double global_image_width =0.5;
 bool signDisambiguationFlag = false;
-int threshold = 1000;	 
+int threshold = 1000;
+string descriptor = "good";
+string distance_function = "euclidean";
 string name_of_approach = "your_name+your_student_number"; //CRC stands for Cognitive Robotics Course - can be a param
 
 double recognition_threshold  = 1000;
-std::string home_address= "/home/hamidreza/";
+double normal_estimation_radius  = 0.03;
+std::string home_address= "/home/cor/";
 
 /* _______________________________
 |                                 |
@@ -247,8 +250,7 @@ int main(int argc, char** argv)
     // _p_crtov_publisher = (boost::shared_ptr<ros::Publisher>) new ros::Publisher;
     // *_p_crtov_publisher = nh.advertise<race_perception_msgs::CompleteRTOV> ("/perception/pipeline_default/object_descriptor/new_histogram_tracked_object_view", 1000);
     
-    
-    ROS_INFO("rug_kfold_cross_validation package -> Hello World!");
+
 
     /* _____________________________________
     |                                       |
@@ -260,13 +262,36 @@ int main(int argc, char** argv)
     
     //// system params
 	nh.param<std::string>("/perception/name_of_approach", name_of_approach, name_of_approach);
+    nh.param<std::string>("/perception/descriptor", descriptor, descriptor);
+    nh.param<std::string>("/perception/distance_function", distance_function, distance_function);
     nh.param<int>("/perception/number_of_bins", number_of_bins, number_of_bins);
     nh.param<double>("/perception/global_image_width", global_image_width, global_image_width);		
     nh.param<int>("/perception/adaptive_support_lenght", adaptive_support_lenght, adaptive_support_lenght);
     nh.param<int>("/perception/threshold", threshold, threshold);
     
     nh.param<double>("/perception/recognition_threshold", recognition_threshold, recognition_threshold);
+    nh.param<double>("/perception/normal_estimation_radius", normal_estimation_radius, normal_estimation_radius);
 
+
+ROS_INFO("rug_kfold_cross_validation package -> Hello World!");
+/* 
+string target_pc_path = home_address + "Category//Bottle_Category//Bottle_Object2.pcd";
+
+ROS_INFO("\t\t[-]-address %s :",target_pc_path.c_str());
+        boost::shared_ptr<PointCloud<PointT> > target_pc (new PointCloud<PointT>);
+		if (io::loadPCDFile <PointXYZRGBA> (target_pc_path.c_str(), *target_pc) == -1)
+		{	
+			ROS_ERROR("\t\t[-]-Could not read given object %s :",target_pc_path.c_str());
+			return(0);
+		}
+
+        //visualization point cloud
+		pcl::visualization::PCLVisualizer viewer1 ("original");
+		viewer1.addPointCloud (target_pc, "original");
+		viewer1.setBackgroundColor (0, 0, 255);
+		while (!viewer1.wasStopped ())
+		{ viewer1.spinOnce (100);}
+*/
     /* _____________________________________
     |                                       |
     |  define path of train and test data   |
@@ -279,17 +304,17 @@ int main(int argc, char** argv)
 	//int exp_num = 0;
 
     // you need to modify this line by correcting the path of dataset
-    string dataset= (home_address == "/home/cognitiverobotics/datasets/restaurant_object_dataset/") ? "Restaurant RGB-D Object Dataset" : "ModelNet10 Dataset";
+    string dataset= (home_address == "/home/cor/datasets/restaurant_object_dataset/") ? "Restaurant RGB-D Object Dataset" : "ModelNet10 Dataset";
 
-    evaluation_file = ros::package::getPath("rug_kfold_cross_validation")+ "/result/experiment_1/summary_of_experiment.txt";
+    evaluation_file = ros::package::getPath("rug_kfold_cross_validation")+ "/result/experiment_1/summary_of_experiment_" + descriptor + "_" + distance_function + (descriptor == "good" ? "_" + std::to_string(number_of_bins) + "bins" : "") + ".txt";
     results.open (evaluation_file.c_str(), std::ofstream::trunc);
     results  << "system configuration:" 
             << "\n\t-experiment_name = " << name_of_approach
             << "\n\t-name_of_dataset = " << dataset
-            << "\n\t-object_representation_method = " << "GOOD" //TODO: can be a param
+            << "\n\t-object_representation_method = " << descriptor
             << "\n\t\t-number_of_bins = " << number_of_bins
             << "\n\t\t-other parameters = " << "add name and value of each parameter"
-            << "\n\n\t-distance_function = " << "chi-Squared" //TODO: can be a param
+            << "\n\n\t-distance_function = " << distance_function
             << "\n\t-number_of_category = "<< "10";   
 
     results.close();
@@ -331,49 +356,54 @@ int main(int argc, char** argv)
         int track_id = 1;
         int view_id =1;
 
-        /* _________________________________
-        |                                   |
-        |  option1: GOOD shape descriptor   |
-        |___________________________________| */
-        
-        conceptualizingGOODTrainData(track_id, 
-                                     pp,
-                                     home_address, 
-                                     adaptive_support_lenght,
-                                     global_image_width,
-                                     threshold,
-                                     number_of_bins
-                                    );
+        if (descriptor == "good")
+        {
+            /* _________________________________
+            |                                   |
+            |  option1: GOOD shape descriptor   |
+            |___________________________________| */
+            
+            conceptualizingGOODTrainData(track_id, 
+                                        pp,
+                                        home_address, 
+                                        adaptive_support_lenght,
+                                        global_image_width,
+                                        threshold,
+                                        number_of_bins
+                                        );
+        }
+        else if (descriptor == "vfh")
+        {       
+            /* _________________________________
+            |                                   |
+            |  option2: VFH shape descriptor    |
+            |___________________________________| */
 
-       
-        /* _________________________________
-        |                                   |
-        |  option2: VFH shape descriptor    |
-        |___________________________________| */
-
-        // float normal_estimation_radius = 0.03;
-        // conceptualizingVFHTrainData( track_id, 
-        //                              pp,
-        //                              home_address,
-        //                              normal_estimation_radius
-        //                              );
-        
-
-        /* ________________________________
-        |                                  |
-        |  option3: ESF shape descriptor   |
-        |__________________________________| */
-        //// If you use ESF shape descriptor, comment the following line in CMakeList.txt
-        //// line 29: add_definitions(${PCL_DEFINITIONS})
-
-        // conceptualizingESFTrainData( track_id, 
-        //                              pp,
-        //                              home_address);
-
+            float normal_estimation_radius = 0.03;
+            conceptualizingVFHTrainData( track_id, 
+                                        pp,
+                                        home_address,
+                                        normal_estimation_radius
+                                        );
+        }
+        else if (descriptor == "esf")
+        {
+            /* ________________________________
+            |                                  |
+            |  option3: ESF shape descriptor   |
+            |__________________________________| */
+            conceptualizingESFTrainData( track_id, 
+                                         pp,
+                                         home_address);
+        } else 
+        {
+            printf("Unknown descriptor, exiting program.\n");
+            return 1;
+        }
         
         //// get list of all object categories
         vector <ObjectCategory> list_of_object_category = _pdb->getAllObjectCat();
-        //ROS_INFO(" %d categories exist in the perception database ", list_of_object_category.size() );
+        ROS_INFO(" %d categories exist in the perception database ", list_of_object_category.size() );
 
         //// initialize confusion_matrix
         if (!map_name_to_idx_flag)
@@ -422,70 +452,81 @@ int main(int argc, char** argv)
             ros::Time begin_process = ros::Time::now(); //start tic	
             SITOV object_representation;
 
-            /* _________________________________
-            |                                   |
-            |  option1: GOOD shape description  |
-            |___________________________________| */
 
-            boost::shared_ptr<pcl::PointCloud<PointT> > pca_object_view (new PointCloud<PointT>);
-            boost::shared_ptr<PointCloud<PointT> > pca_pc (new PointCloud<PointT>); 
-            vector < boost::shared_ptr<pcl::PointCloud<PointT> > > vector_of_projected_views;
-            double largest_side = 0;
-            int  sign = 1;
-            vector <float> view_point_entropy;
-            string std_name_of_sorted_projected_plane;
-            Eigen::Vector3f center_of_bbox;
-            vector< float > object_description;
-            
-            compuet_object_description( target_pc,
-                                        adaptive_support_lenght,
-                                        global_image_width,
-                                        threshold,
-                                        number_of_bins,
-                                        pca_object_view,
-                                        center_of_bbox,
-                                        vector_of_projected_views, 
-                                        largest_side, 
-                                        sign,
-                                        view_point_entropy,
-                                        std_name_of_sorted_projected_plane,
-                                        object_description );
-            
-          
-            for (size_t i = 0; i < object_description.size(); i++)
+            if (descriptor == "good") 
             {
-                object_representation.spin_image.push_back(object_description.at(i));
+                /* _________________________________
+                |                                   |
+                |  option1: GOOD shape description  |
+                |___________________________________| */
+
+                boost::shared_ptr<pcl::PointCloud<PointT> > pca_object_view (new PointCloud<PointT>);
+                boost::shared_ptr<PointCloud<PointT> > pca_pc (new PointCloud<PointT>); 
+                vector < boost::shared_ptr<pcl::PointCloud<PointT> > > vector_of_projected_views;
+                double largest_side = 0;
+                int  sign = 1;
+                vector <float> view_point_entropy;
+                string std_name_of_sorted_projected_plane;
+                Eigen::Vector3f center_of_bbox;
+                vector< float > object_description;
+                
+                compuet_object_description( target_pc,
+                                            adaptive_support_lenght,
+                                            global_image_width,
+                                            threshold,
+                                            number_of_bins,
+                                            pca_object_view,
+                                            center_of_bbox,
+                                            vector_of_projected_views, 
+                                            largest_side, 
+                                            sign,
+                                            view_point_entropy,
+                                            std_name_of_sorted_projected_plane,
+                                            object_description );
+                
+        
+                for (size_t i = 0; i < object_description.size(); i++)
+                {
+                    object_representation.spin_image.push_back(object_description.at(i));
+                }
             }
-            
-            
-            /* _________________________________
-            |                                   |
-            |  option2: VFH shape description   |
-            |___________________________________| */
+            else if (descriptor == "vfh") 
+            {           
+                /* _________________________________
+                |                                   |
+                |  option2: VFH shape description   |
+                |___________________________________| */
 
-            // pcl::PointCloud<pcl::VFHSignature308>::Ptr vfh (new pcl::PointCloud<pcl::VFHSignature308> ());
-            // // boost::shared_ptr< vector <SITOV> > vfh (new vector <SITOV>);
-            // estimateViewpointFeatureHistogram(target_pc, 
-            //                 normal_estimation_radius,
-            //                 vfh);
-            // size_t vfh_size = sizeof(vfh->points.at(0).histogram)/sizeof(float);
-            // for (size_t i = 0; i < vfh_size ; i++)
-            // {
-            //     object_representation.spin_image.push_back( vfh->points.at(0).histogram[i]);
-            // }
+                pcl::PointCloud<pcl::VFHSignature308>::Ptr vfh (new pcl::PointCloud<pcl::VFHSignature308> ());
+                // boost::shared_ptr< vector <SITOV> > vfh (new vector <SITOV>);
+                estimateViewpointFeatureHistogram(target_pc, 
+                               normal_estimation_radius,
+                               vfh);
+                size_t vfh_size = sizeof(vfh->points.at(0).histogram)/sizeof(float);
+                for (size_t i = 0; i < vfh_size ; i++)
+                {
+                   object_representation.spin_image.push_back( vfh->points.at(0).histogram[i]);
+                }
+            }
+            else if (descriptor == "esf")
+            {
+                /* ________________________________
+                |                                  |
+                |  option3: ESF shape description  |
+                |__________________________________| */
 
-            /* ________________________________
-            |                                  |
-            |  option3: ESF shape description  |
-            |__________________________________| */
-
-            // pcl::PointCloud<pcl::ESFSignature640>::Ptr esf (new pcl::PointCloud<pcl::ESFSignature640> ());
-            // estimateESFDescription (target_pc, esf);
-            // size_t esf_size = sizeof(esf->points.at(0).histogram)/sizeof(float);
-            // for (size_t i = 0; i < esf_size ; i++)
-            // {
-            //     object_representation.spin_image.push_back( esf->points.at(0).histogram[i]);
-            // }
+                pcl::PointCloud<pcl::ESFSignature640>::Ptr esf (new pcl::PointCloud<pcl::ESFSignature640> ());
+                estimateESFDescription (target_pc, esf);
+                size_t esf_size = sizeof(esf->points.at(0).histogram)/sizeof(float);
+                for (size_t i = 0; i < esf_size ; i++)
+                {
+                object_representation.spin_image.push_back( esf->points.at(0).histogram[i]);
+                }
+            } else 
+            {
+                printf("Unknown descriptor, exiting program.\n");
+                return 1;
+            }
 
             ROS_INFO("\t\t[-]size of object view histogram is = %d", object_representation.spin_image.size());          
 
@@ -532,17 +573,35 @@ int main(int argc, char** argv)
                     int best_matched_index;
                     float normalized_distance;
 
-                    //// TODO: type of distance function can be a parameter 
+                    if (distance_function == "euclidean") 
+                    {                    
+                        // euclidean distance
+                        euclideanBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "chi-sq") 
+                    {                    
+                        // chi-squared distance
+                        chiSquaredBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "klbased") 
+                    {                    
+                        // symmetric Kullback–Leibler divergence 
+                        kLBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+                    }
+                    else if (distance_function == "fidelity") 
+                    {                    
+                        // fidelity
+                        FidelityBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
+                    }
+                    else if (distance_function == "sq-chord") 
+                    {                    
+                        // squared chord distance
+                        squaredChordBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+                    } else {
+                        printf("Unknown distance function, exiting program.\n");
+                        return 1;
+                    }
 
-                    //// euclidean distance
-                    //euclideanBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-                    
-                    //// chi-squared distance
-                    chiSquaredBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-                    
-                    //// symmetric Kullback–Leibler divergence 
-                    //kLBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-                                
                     object_category_distance.push_back(min_distance_object_category);
                     //// the following msg can be used in computing top5 accuracy or other high-level process
                     NOCD tmp;

@@ -1,0 +1,10 @@
+close all;
+figure ();
+hold on;
+grid on;
+set(gca,'LineStyleOrder', '--');
+globalF1= [1, 0.8333, 0.7692, 0.7778, 0.6905, 0.6818, 0.6824, 0.6842, 0.6952, 0.6983, 0.5889];
+axis([0,15,0.5,1.05]);
+plot(1:size(globalF1,2), globalF1(1:size(globalF1,2)),'-.O', 'Color',[0 0 1], 'LineWidth',2.);
+xlabel('Number of Learned Categories','FontSize',15);
+ylabel('Global Classification Accuracy','FontSize',15);

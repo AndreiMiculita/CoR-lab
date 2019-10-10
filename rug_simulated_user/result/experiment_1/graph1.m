@@ -1,0 +1,17 @@
+close all;
+figure;
+hold on;
+grid on;
+set(gca,'LineStyleOrder', '-');
+Precision= [];
+axis([0,10,0,1.2]);
+plot (Precision, 'LineWidth',2);
+xlabel('Question / Correction Iterations','FontSize',15);
+ylabel('Protocol Accuracy','FontSize',15);
+set(gca,'LineStyleOrder', '--');
+line([0 10],[0.67 0.67] ,'Color',[0 0 0 0.3], 'LineWidth',1);
+text(-10,0.72,'Thereshold', 'FontSize',12, 'Interpreter','Latex');
+line([0,0] ,[0.05,1],'Color',[1 0 0], 'LineWidth',1);
+text(0.5, 0.05 ,'' , 'FontSize',15,'FontWeight','bold','Interpreter','Latex' ,'BackgroundColor', [1,0,0,0.2]);
+line([0,0] ,[0.1,1],'Color',[1 0 0], 'LineWidth',1);
+text(0.5, 0.1,'' , 'FontSize',15,'FontWeight','bold','Interpreter','Latex', 'BackgroundColor', [1,0,0,0.2] );

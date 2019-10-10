@@ -37,15 +37,23 @@
 
 
 		<!-- set home_address parameter which represents the path of the dataset -->
-		<!-- restaurant_object_dataset : "/home/cor/datasets/restaurant_object_dataset/"; -->
-		<!-- modelnet10 : "/home/cor/datasets/modelnet10/"; -->
+		<!-- restaurant_object_dataset : "/datasets/restaurant_object_dataset/"; -->
+		<!-- modelnet10 : "/datasets/modelnet10/"; -->
 		<arg name="home_address" default="/home/cor/datasets/restaurant_object_dataset/" />
 				
 		<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
 
 		<!-- name of approach -->
-		<arg name="name_of_approach" default="your_name_plus_your_student_number" />
+		<arg name="name_of_approach" default="Andrei and Kamal s4161947 and s3675319" />
 		<param name="/perception/name_of_approach" type="string" value = "$(arg name_of_approach)"/>
+
+		<!-- descriptor -->
+		<arg name="descriptor" default="good" />
+		<param name="/perception/descriptor" type="string" value = "$(arg descriptor)"/>
+
+		<!-- distance function -->
+		<arg name="distance_function" default="euclidean" />
+		<param name="/perception/distance_function" type="string" value = "$(arg distance_function)"/>
 
 		<!-- GOOD descriptor params -->
 		<arg name="adaptive_support_lenght" default="0" />
