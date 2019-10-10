@@ -9,6 +9,6 @@
 # modified environment variables
 export CMAKE_PREFIX_PATH="/home/cor/student_ws/rug_simulated_user/build/devel:$CMAKE_PREFIX_PATH"
 export LD_LIBRARY_PATH="/opt/ros/melodic/include/moveit:/opt/ros/melodic/lib"
-export PATH="/opt/ros/melodic/bin:/usr/lib/python2.7/:/home/cor/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+export PATH="/opt/ros/melodic/bin:/usr/lib/python2.7/:/home/cor/bin:/home/cor/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
 export ROSLISP_PACKAGE_DIRECTORIES="/home/cor/student_ws/rug_simulated_user/build/devel/share/common-lisp"
 export ROS_PACKAGE_PATH="/home/cor/student_ws/rug_simulated_user:/opt/ros/melodic/share"

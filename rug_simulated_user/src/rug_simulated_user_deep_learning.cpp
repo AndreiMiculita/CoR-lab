@@ -739,27 +739,27 @@ int main(int argc, char** argv)
 						if (distance_function == "euclidean") 
 						{                    
 							// euclidean distance
-							euclideanBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+							euclideanBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 						}
 						else if (distance_function == "chi-sq") 
 						{                    
 							// chi-squared distance
-							chiSquaredBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+							chiSquaredBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 						}
 						else if (distance_function == "klbased") 
 						{                    
 							// symmetric Kullback–Leibler divergence 
-							kLBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+							kLBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 						}
 						else if (distance_function == "fidelity") 
 						{                    
 							// fidelity
-							FidelityBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
+							FidelityBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
 						}
 						else if (distance_function == "sq-chord") 
 						{                    
 							// squared chord distance
-							squaredChordBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+							squaredChordBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 						} else {
 							printf("Unknown distance function, exiting program.\n");
 							return 1;

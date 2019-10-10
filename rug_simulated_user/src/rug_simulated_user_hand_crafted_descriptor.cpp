@@ -321,10 +321,10 @@ int main(int argc, char** argv)
             << "\n\t-experiment_name = " << name_of_approach
             << "\n\t-name_of_dataset = " << dataset
             << "\n\t-number_of_category = "<< "51"
-            << "\n\t-object_representation_method = " << descriptor;
+            << "\n\t-object_representation_method = " << descriptor
             << "\n\t\t-number_of_bins = " << number_of_bins
-            << "\n\t\t-other parameters = " << "add name and value of each parameter";
-            << "\n\n\t-distance_function = " << distance_function;
+            << "\n\t\t-other parameters = " << "add name and value of each parameter"
+            << "\n\n\t-distance_function = " << distance_function
 			<< "\n\t-user_sees_no_improvment = " << user_sees_no_improvment_const
 			<< "\n\t-protocol_threshold = " << protocol_threshold
 			<< "\n-----------------------------------------------------------------------------------------------------------------------------------------\n\n";
