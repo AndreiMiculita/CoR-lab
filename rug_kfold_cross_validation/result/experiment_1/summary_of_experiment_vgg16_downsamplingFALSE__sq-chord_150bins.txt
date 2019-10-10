@@ -1863,13 +1863,13 @@ No.	object_name				ground_truth	prediction		TP	FP	FN 		distance
  - Confusion_matrix [10,10]= 
 
 bathtub,		36,	3,	1,	0,	0,	0,	0,	8,	0,	2,		bathtub accuracy = 0.72
-bed,		0,	97,	0,	1,	0,	0,	0,	2,	0,	0,		bed accuracy = 0.97
-chair,		1,	2,	91,	1,	0,	0,	2,	0,	2,	1,		chair accuracy = 0.91
-desk,		1,	4,	2,	63,	0,	0,	3,	8,	5,	0,		desk accuracy = 0.7326
+bed,			0,	97,	0,	1,	0,	0,	0,	2,	0,	0,		bed accuracy = 0.97
+chair,			1,	2,	91,	1,	0,	0,	2,	0,	2,	1,		chair accuracy = 0.91
+desk,			1,	4,	2,	63,	0,	0,	3,	8,	5,	0,		desk accuracy = 0.7326
 dresser,		0,	1,	0,	4,	63,	0,	18,	0,	0,	0,		dresser accuracy = 0.7326
 monitor,		0,	2,	1,	0,	1,	95,	1,	0,	0,	0,		monitor accuracy = 0.95
-night_stand,		1,	1,	3,	5,	13,	0,	60,	0,	3,	0,		night_stand accuracy = 0.6977
-sofa,		1,	2,	0,	1,	0,	0,	2,	91,	2,	1,		sofa accuracy = 0.91
-table,		0,	4,	2,	16,	0,	0,	1,	0,	77,	0,		table accuracy = 0.77
-toilet,		0,	0,	4,	0,	1,	0,	0,	0,	0,	95,		toilet accuracy = 0.95
+night_stand,	1,	1,	3,	5,	13,	0,	60,	0,	3,	0,		night_stand accuracy = 0.6977
+sofa,			1,	2,	0,	1,	0,	0,	2,	91,	2,	1,		sofa accuracy = 0.91
+table,			0,	4,	2,	16,	0,	0,	1,	0,	77,	0,		table accuracy = 0.77
+toilet,			0,	0,	4,	0,	1,	0,	0,	0,	0,	95,		toilet accuracy = 0.95
 		bathtub, bed, chair, desk, dresser, monitor, night_stand, sofa, table, toilet, 
