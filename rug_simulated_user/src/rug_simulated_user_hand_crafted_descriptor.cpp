@@ -88,7 +88,7 @@ typedef pcl::PointXYZRGBA PointT;
   |_________________________________| */
 
   //dataset
-  std::string home_address = "/home/cognitiverobotics/datasets/washington_RGBD_object/";
+  std::string home_address = "/home/cor/datasets/washington_RGBD_object/";
   std::string name_of_approach = "cognitive_robotic_course";
 
   //spin images parameters
@@ -123,7 +123,9 @@ typedef pcl::PointXYZRGBA PointT;
   int  adaptive_support_lenght = 1;
   double global_image_width =0.5;
   int sign = 1;
-  int threshold = 10;	 
+  int threshold = 10;
+  string descriptor = "good";
+  string distance_function="euclidean";
 
   std::string evaluation_file, evaluationTable, precision_file, local_f1_vs_learned_category, f1_vs_learned_category;
 
@@ -291,6 +293,9 @@ int main(int argc, char** argv)
 	ROS_INFO("home_address = %s", home_address.c_str());
 	nh.param<int>("/perception/number_of_categories", number_of_categories, number_of_categories);
 
+    nh.param<std::string>("/perception/descriptor", descriptor, descriptor);
+    nh.param<std::string>("/perception/distance_function", distance_function, distance_function);
+
 	//read GOOD descriptor parameters
 	nh.param<int>("/perception/number_of_bins", number_of_bins, number_of_bins);
 	nh.param<double>("/perception/global_image_width", global_image_width, global_image_width);
@@ -307,19 +312,19 @@ int main(int argc, char** argv)
 	nh.param<double>("/perception/recognition_threshold", recognition_threshold, recognition_threshold);
 
 
-	evaluation_file = ros::package::getPath("rug_simulated_user")+ "/result/experiment_1/summary_of_experiment.txt";
+	evaluation_file = ros::package::getPath("rug_simulated_user")+ "/result/experiment_1/summary_of_experiment_" + descriptor + "_" + distance_function + (descriptor == "good" ? "_" + std::to_string(number_of_bins) + "bins" : "") + ".txt";
 	summary_of_experiment.open (evaluation_file.c_str(), std::ofstream::out);
 
 	
-	string dataset= (home_address == "/home/cognitiverobotics/datasets/restaurant_object_dataset/") ? "Restaurant Object Dataset" : "RGB-D Washington";
+	string dataset= (home_address == "/home/cor/datasets/restaurant_object_dataset/") ? "Restaurant Object Dataset" : "RGB-D Washington";
     summary_of_experiment  << "system configuration:" 
             << "\n\t-experiment_name = " << name_of_approach
             << "\n\t-name_of_dataset = " << dataset
             << "\n\t-number_of_category = "<< "51"
-            << "\n\t-object_representation_method = " << "GOOD" //TODO: can be a param
+            << "\n\t-object_representation_method = " << descriptor;
             << "\n\t\t-number_of_bins = " << number_of_bins
-            << "\n\t\t-other parameters = " << "add name and value of each parameter"
-            << "\n\n\t-distance_function = " << "KL" //TODO: can be a param
+            << "\n\t\t-other parameters = " << "add name and value of each parameter";
+            << "\n\n\t-distance_function = " << distance_function;
 			<< "\n\t-user_sees_no_improvment = " << user_sees_no_improvment_const
 			<< "\n\t-protocol_threshold = " << protocol_threshold
 			<< "\n-----------------------------------------------------------------------------------------------------------------------------------------\n\n";
@@ -644,17 +649,36 @@ int main(int argc, char** argv)
 						int best_matched_index;
 						float normalized_distance;
 
-						//// TODO: type of distance function can be a parameter 
-						/// xBasedObjectCategoryDistance() -> returns minimum distance and best_matched_index 
+						
+						if (distance_function == "euclidean") 
+						{                    
+							// euclidean distance
+							euclideanBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "chi-sq") 
+						{                    
+							// chi-squared distance
+							chiSquaredBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "klbased") 
+						{                    
+							// symmetric Kullback–Leibler divergence 
+							kLBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "fidelity") 
+						{                    
+							// fidelity
+							FidelityBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
+						}
+						else if (distance_function == "sq-chord") 
+						{                    
+							// squared chord distance
+							squaredChordBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+						} else {
+							printf("Unknown distance function, exiting program.\n");
+							return 1;
+						}
 
-						//// euclidean distance
-						//euclideanBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-						
-						//// chi-squared distance
-						chiSquaredBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-						
-						//// symmetric Kullback–Leibler divergence 
-						//kLBasedObjectCategoryDistance( object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 									
 						object_category_distance.push_back(min_distance_object_category);
 					}

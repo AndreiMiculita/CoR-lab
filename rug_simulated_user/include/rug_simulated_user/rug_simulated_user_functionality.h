@@ -660,6 +660,43 @@ int introduceNewCategory2(string home_address,
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    int squaredChordDistanceBetweenTwoObjectViewHistogram( SITOV objectViewHistogram1,
+                                                        SITOV objectViewHistogram2, 
+                                                        float &diffrence);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    int squaredChordBasedObjectCategoryDistance( 	SITOV target,
+                                                vector< SITOV > category_instances,
+                                                float &minimumDistance, 
+                                                int &best_matched_index, 
+                                                PrettyPrint &pp);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    int FidelityBasedObjectCategoryDistance(  SITOV target,
+                                        vector< SITOV > category_instances,
+                                        float &minimumDistance, 
+                                        int &best_matched_index, 
+                                        PrettyPrint &pp);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////added A&K
+    int FidelityDistanceBetweenTwoObjectViewHistogram( SITOV objectViewHistogram1,
+                                                        SITOV objectViewHistogram2, 
+                                                        float &diffrence);
+    
+    int euclideanBasedObjectCategoryDistance(	SITOV target,
+                                                vector< SITOV > category_instances,
+                                                float &minimumDistance, 
+                                                int &best_matched_index, 
+                                                PrettyPrint &pp);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    int kLBasedObjectCategoryDistance(  SITOV target,
+                                        vector< SITOV > category_instances,
+                                        float &minimumDistance, 
+                                        int &best_matched_index, 
+                                        PrettyPrint &pp);
+
 
 #endif
 

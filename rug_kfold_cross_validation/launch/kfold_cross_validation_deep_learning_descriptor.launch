@@ -65,7 +65,7 @@
 	<arg name="name_of_approach" default="mobilenetV2_IBL" />
 	<param name="/perception/name_of_approach" type="string" value = "$(arg name_of_approach)"/>
 
-	<!-- name of approach -->
+	<!-- distance_function -->
 	<arg name="distance_function" default="euclidean" />
 	<param name="/perception/distance_function" type="string" value = "$(arg distance_function)"/>
 

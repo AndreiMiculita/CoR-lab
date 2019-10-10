@@ -39,10 +39,11 @@
 	<param name="/perception/recognition_threshold" type="double" value = "$(arg recognition_threshold)"/>
 
 	<!-- set home_address parameter which represents the path of the dataset -->
-	<arg name="home_address" default="/home/cognitiverobotics/datasets/washington_RGBD_object/" /> 
+	<arg name="home_address" default="/home/cor/datasets/washington_RGBD_object/" /> 
 	<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
 	<arg name="number_of_categories" default="51" />
 	<param name="/perception/number_of_categories" type="int" value = "$(arg number_of_categories)"/>
+
 
 	<!-- Spin image parameters. -->
 	<arg name="spin_image_width" default="8" />
@@ -65,6 +66,14 @@
 	<param name="/perception/window_size" type="int" value = "$(arg window_size)"/>
 
 	
+	<!-- descriptor -->
+	<arg name="descriptor" default="good" />
+	<param name="/perception/descriptor" type="string" value = "$(arg descriptor)"/>
+
+	<!-- distance function -->
+	<arg name="distance_function" default="euclidean" />
+	<param name="/perception/distance_function" type="string" value = "$(arg distance_function)"/>
+
 	
 	<!-- GOOD shape descriptor params -->
 	<arg name="adaptive_support_lenght" default="0" />

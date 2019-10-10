@@ -108,7 +108,7 @@ bool downsampling = false;
 bool image_normalization = true;
 bool multiviews = true;
 bool max_pooling = true;
-bool modelnet_dataset = false; // we do not need to perform PCA for modelNet dataset
+bool modelnet_dataset = true; // we do not need to perform PCA for modelNet dataset
 
 std::string home_address= "";
 
@@ -308,9 +308,9 @@ int main(int argc, char** argv)
     nh.param<double>("/perception/downsampling_voxel_size", downsampling_voxel_size, downsampling_voxel_size);
     downsampling_voxel_size = downsampling_voxel_size * 0.02;
 
-    // // read modelnet_dataset parameter 0 = FLASE, 1 = TRUE 
-    // nh.param<bool>("/perception/modelnet_dataset", modelnet_dataset, modelnet_dataset);
-    // string modelnet_dataset_flag = (modelnet_dataset == 0) ? "False" : "True";
+    // read modelnet_dataset parameter 0 = FLASE, 1 = TRUE 
+    nh.param<bool>("/perception/modelnet_dataset", modelnet_dataset, modelnet_dataset);
+    string modelnet_dataset_flag = (modelnet_dataset == 0) ? "False" : "True";
 
     
     /* _____________________________
@@ -544,6 +544,7 @@ int main(int argc, char** argv)
             {
                 ROS_ERROR("Failed to call deep learning service");
             }
+            
             
             string tmp = pcd_file_address.substr(home_address.size(), pcd_file_address.size());
             string ground_truth = extractCategoryName(tmp);

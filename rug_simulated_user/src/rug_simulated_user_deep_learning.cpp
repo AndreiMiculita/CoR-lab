@@ -94,7 +94,7 @@ typedef pcl::PointXYZRGBA PointT;
   |_________________________________| */
 
   //dataset
-  string home_address = "/home/cognitiverobotics/datasets/washington_RGBD_object/"; 
+  string home_address = "/home/cor/datasets/washington_RGBD_object/"; 
   	
 	//spin images parameters
   int    spin_image_width = 8 ;
@@ -116,6 +116,9 @@ typedef pcl::PointXYZRGBA PointT;
   bool multiviews = true;
   bool max_pooling = true;
   bool modelnet_dataset = false; // we do not need to perform PCA for modelNet dataset
+
+  //distance function
+  string distance_function="euclidean";
 
   std::string deep_learning_architecture = "/vgg16_service";
 
@@ -310,6 +313,9 @@ int main(int argc, char** argv)
 	nh.param<int>("/perception/number_of_categories", number_of_categories, number_of_categories);
 	nh.param<std::string>("/perception/name_of_approach", name_of_approach, name_of_approach);
   
+    // read distance function
+    nh.param<std::string>("/perception/distance_function", distance_function, distance_function);
+
     //parameters of GOOD object descriptor
     nh.param<int>("/perception/number_of_bins", number_of_bins, number_of_bins);
     nh.param<double>("/perception/global_image_width", global_image_width, global_image_width);		
@@ -356,14 +362,14 @@ int main(int argc, char** argv)
 	//recognition threshold
 	nh.param<double>("/perception/recognition_threshold", recognition_threshold, recognition_threshold);
 
-	string dataset= (home_address == "/home/cognitiverobotics/datasets/restaurant_object_dataset/") ? "Restaurant Object Dataset" : "RGB-D Washington";
+	string dataset= (home_address == "/home/cor/datasets/restaurant_object_dataset/") ? "Restaurant Object Dataset" : "RGB-D Washington";
 
-	evaluation_file = ros::package::getPath("rug_simulated_user")+ "/result/experiment_1/summary_of_experiment.txt";
+	evaluation_file = ros::package::getPath("rug_simulated_user")+ "/result/experiment_1/summary_of_experiment_vgg16_downsampling" + downsampling_flag + "_" + (downsampling ? "voxel_size" + std::to_string(downsampling_voxel_size) : "") + "_" +  distance_function + "_" + std::to_string(number_of_bins) + "bins.txt";
 	summary_of_experiment.open (evaluation_file.c_str(), std::ofstream::out);
 	
 	summary_of_experiment  <<"system configuration:" 
 			<< "\n\t-experiment_name = " << name_of_approach
-			<< "\n\t-name_of_dataset = " << dataset //TODO make a parameter for this 
+			<< "\n\t-name_of_dataset = " << dataset 
 			//<< "\n\t-down_sampling_resolution = "<< 0.001* (exp_num)
 			<< "\n\t-number_of_bins = "<< number_of_bins
 			<< "\n\t-number_of_category = "<< "51"
@@ -729,17 +735,35 @@ int main(int argc, char** argv)
 						int best_matched_index;
 						float normalized_distance;
 
-						//// TODO: type of distance function can be a parameter 
-						/// xBasedObjectCategoryDistance() -> returns minimum distance and best_matched_index 
-
-						//// euclidean distance
-						//euclideanBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
 						
-						//// chi-squared distance
-						chiSquaredBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
-						
-						//// symmetric Kullback–Leibler divergence 
-						//kLBasedObjectCategoryDistance( deep_object_representation, category_instances, min_distance_object_category, best_matched_index, pp);
+						if (distance_function == "euclidean") 
+						{                    
+							// euclidean distance
+							euclideanBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "chi-sq") 
+						{                    
+							// chi-squared distance
+							chiSquaredBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "klbased") 
+						{                    
+							// symmetric Kullback–Leibler divergence 
+							kLBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+						}
+						else if (distance_function == "fidelity") 
+						{                    
+							// fidelity
+							FidelityBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp); //added A&K
+						}
+						else if (distance_function == "sq-chord") 
+						{                    
+							// squared chord distance
+							squaredChordBasedObjectCategoryDistance( deep_representation_sitov, category_instances, min_distance_object_category, best_matched_index, pp);
+						} else {
+							printf("Unknown distance function, exiting program.\n");
+							return 1;
+						}
 									
 						object_category_distance.push_back(min_distance_object_category);
 					}

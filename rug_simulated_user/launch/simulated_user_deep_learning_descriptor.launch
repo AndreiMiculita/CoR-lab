@@ -55,8 +55,13 @@
 
 	
 	<!-- set home_address parameter which represents the path of the dataset -->
-	<arg name="home_address" default="/home/cognitiverobotics/datasets/washington_RGBD_object/" />
+	<arg name="home_address" default="/home/cor/datasets/washington_RGBD_object/" />
 	<param name="/perception/home_address" type="string" value = "$(arg home_address)"/>
+
+	<!-- distance_function -->
+	<arg name="distance_function" default="euclidean" />
+	<param name="/perception/distance_function" type="string" value = "$(arg distance_function)"/>
+
 
 
 	<!-- The following network architectures have been implemeneted and can be used: 
