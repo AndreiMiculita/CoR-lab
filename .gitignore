@@ -1,5 +1,6 @@
 rug_deep_learning_object_representation/
+rug_franka_arm/
+rug_object_recognition/
 rug_object_representation/
 rug_perception_bringup/
-rug_object_recognition/
-
+rug_pipeline_manager/
